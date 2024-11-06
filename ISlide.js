@@ -618,13 +618,24 @@ class ISlide extends HTMLElement {
       }
       else {
         const { type, doc } = cache[docUrl];
-        const headEl = doc.querySelector('head').cloneNode(true);
-        const bodyEl = doc.querySelector('body').cloneNode();
+	const newdoc = doc.cloneNode(true);
+	const headEl = newdoc.querySelector('head');
+	const bodyEl = newdoc.querySelector('body');
         const slideNumber = parseInt(slideId, 10);
-        const origSlideEl = doc.getElementById(slideId) ||
-              doc.querySelectorAll('.slide')[slideNumber - 1];
-        if (!origSlideEl) throw new Error(`Could not find slide ${slideId} in ${docUrl}`);
-        const slideEl = origSlideEl.cloneNode(true) ;
+        const slideEl = newdoc.getElementById(slideId) ||
+              newdoc.querySelectorAll('.slide')[slideNumber - 1];
+        if (!slideEl) throw new Error(`Could not find slide ${slideId} in ${docUrl}`);
+
+	// Hide all other slides, emulating the way B6+ does it. If
+	// the slides are for Shower, the style sheet that comes with
+	// the slides does this already.
+        for (const c of newdoc.querySelectorAll('.slide'))
+	  if (c != slideEl) {
+	    c.style.visibility = 'hidden';
+	    c.style.position = "absolute";
+	    c.style.top = "0";
+	  }
+
         slideEl.style.marginLeft = '0';
         bodyEl.style.top = 'inherit';
         bodyEl.style.left = 'inherit';
@@ -638,8 +649,6 @@ class ISlide extends HTMLElement {
 
         // Specific to Shower with CSS Variables
         slideEl.style.setProperty('--slide-scale', 1);
-
-        bodyEl.appendChild(slideEl);
 
         const styleLoadedPromises = [];
         [...headEl.querySelectorAll("link[rel~=stylesheet]")].map(l => {
